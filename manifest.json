@@ -1,0 +1,38 @@
+{
+  "manifest_version": 3,
+  "name": "YouTube Original Audio (Un-Dub)",
+  "version": "1.0.0",
+  "description": "Fixes YouTube's auto-dub bug by restoring the original audio track on dubbed videos.",
+  "homepage_url": "https://github.com/max31000/youtube-original-audio",
+  "icons": {
+    "16": "icons/icon16.png",
+    "48": "icons/icon48.png",
+    "128": "icons/icon128.png"
+  },
+  "content_scripts": [
+    {
+      "matches": ["*://*.youtube.com/*"],
+      "js": ["inject.js"],
+      "run_at": "document_start",
+      "world": "MAIN",
+      "all_frames": true
+    },
+    {
+      "matches": ["*://*.youtube.com/*"],
+      "js": ["content.js"],
+      "run_at": "document_start",
+      "all_frames": true
+    }
+  ],
+  "action": {
+    "default_popup": "popup.html",
+    "default_title": "YouTube Original Audio",
+    "default_icon": {
+      "16": "icons/icon16.png",
+      "48": "icons/icon48.png",
+      "128": "icons/icon128.png"
+    }
+  },
+  "permissions": ["storage"],
+  "host_permissions": ["*://*.youtube.com/*"]
+}

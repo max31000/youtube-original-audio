@@ -1,0 +1,29 @@
+name: CI
+
+on:
+  push:
+    branches: [main]
+  pull_request:
+
+jobs:
+  lint:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+
+      - uses: actions/setup-node@v4
+        with:
+          node-version: 20
+
+      - name: Syntax-check JS files
+        run: |
+          for f in inject.js content.js popup.js scripts/*.mjs; do
+            echo "Checking $f"
+            node --check "$f"
+          done
+
+      - name: Validate manifest.json
+        run: node -e "JSON.parse(require('fs').readFileSync('manifest.json','utf8')); console.log('manifest.json OK')"
+
+      - name: Build extension zip
+        run: node scripts/build.mjs

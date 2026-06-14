@@ -1,0 +1,53 @@
+<!DOCTYPE html>
+<html lang="ru">
+<head>
+  <meta charset="utf-8">
+  <style>
+    body {
+      width: 270px;
+      margin: 0;
+      padding: 14px 16px;
+      font: 13px/1.4 "Segoe UI", Roboto, system-ui, sans-serif;
+      color: #0f0f0f;
+      background: #fff;
+    }
+    h1 { font-size: 14px; margin: 0 0 4px; }
+    p.sub { margin: 0 0 12px; color: #606060; font-size: 12px; }
+    label {
+      display: flex; align-items: flex-start; gap: 8px;
+      padding: 9px 10px; border: 1px solid #e0e0e0; border-radius: 8px;
+      margin-bottom: 8px; cursor: pointer;
+    }
+    label:hover { background: #f7f7f7; }
+    label.active { border-color: #3ea6ff; background: #eef6ff; }
+    input { margin-top: 2px; }
+    .opt-title { font-weight: 600; }
+    .opt-desc { color: #606060; font-size: 12px; }
+    .note { margin-top: 6px; font-size: 11px; color: #909090; }
+  </style>
+</head>
+<body>
+  <h1>Оригинальный звук YouTube</h1>
+  <p class="sub">Отключает навязанный авто-дубляж и возвращает оригинальную дорожку.</p>
+
+  <label id="lbl-original">
+    <input type="radio" name="mode" value="original">
+    <span>
+      <span class="opt-title">Оригинал (рекомендуется)</span><br>
+      <span class="opt-desc">Видео с авто-дубляжом открываются на оригинальной дорожке.</span>
+    </span>
+  </label>
+
+  <label id="lbl-off">
+    <input type="radio" name="mode" value="off">
+    <span>
+      <span class="opt-title">Не вмешиваться</span><br>
+      <span class="opt-desc">Обычное поведение YouTube (дубляж по умолчанию).</span>
+    </span>
+  </label>
+
+  <div class="note">Изменение перезагрузит активную вкладку YouTube. Дорожку можно также переключать кнопкой <b>ORIG/DUB</b> в плеере.</div>
+
+  <script src="popup.js"></script>
+</body>
+</html>
