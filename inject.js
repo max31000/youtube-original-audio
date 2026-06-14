@@ -302,8 +302,8 @@
     btn.textContent = on ? 'ORIG' : 'DUB';
     btn.style.color = on ? '#3ea6ff' : '#aaa';
     btn.title = on
-      ? 'Звук: оригинал (авто-дубляж отключён). Нажми, чтобы вернуть дубляж.'
-      : 'Звук: как у YouTube (дубляж). Нажми, чтобы включить оригинал.';
+      ? 'Audio: original (auto-dub disabled). Click to switch back to dubbed audio.'
+      : 'Audio: YouTube default (dubbed). Click to switch to the original.';
   }
 
   function addButton() {
@@ -321,9 +321,9 @@
       // Switching to "off" disables the whole fix (dubbed-by-default again) —
       // confirm so a stray click doesn't silently turn it off.
       if (next === 'off' && !window.confirm(
-        'Отключить возврат оригинальной аудиодорожки?\n\n' +
-        'Видео с авто-дубляжом снова будут открываться с дубляжом ' +
-        '(поведение YouTube по умолчанию). Включить обратно можно этой же кнопкой.'
+        'Turn off original audio restoration?\n\n' +
+        'Auto-dubbed videos will go back to playing dubbed audio ' +
+        "(YouTube's default behavior). You can turn it back on with this same button."
       )) return;
       setMode(next);
     });

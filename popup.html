@@ -1,5 +1,6 @@
+<!-- SPDX-License-Identifier: GPL-3.0-or-later -->
 <!DOCTYPE html>
-<html lang="ru">
+<html lang="en">
 <head>
   <meta charset="utf-8">
   <style>
@@ -27,26 +28,26 @@
   </style>
 </head>
 <body>
-  <h1>Оригинальный звук YouTube</h1>
-  <p class="sub">Отключает навязанный авто-дубляж и возвращает оригинальную дорожку.</p>
+  <h1>YouTube Original Audio</h1>
+  <p class="sub">Disables forced auto-dubbing and restores the original audio track.</p>
 
   <label id="lbl-original">
     <input type="radio" name="mode" value="original">
     <span>
-      <span class="opt-title">Оригинал (рекомендуется)</span><br>
-      <span class="opt-desc">Видео с авто-дубляжом открываются на оригинальной дорожке.</span>
+      <span class="opt-title">Original (recommended)</span><br>
+      <span class="opt-desc">Auto-dubbed videos open with their original audio track.</span>
     </span>
   </label>
 
   <label id="lbl-off">
     <input type="radio" name="mode" value="off">
     <span>
-      <span class="opt-title">Не вмешиваться</span><br>
-      <span class="opt-desc">Обычное поведение YouTube (дубляж по умолчанию).</span>
+      <span class="opt-title">Don't intervene</span><br>
+      <span class="opt-desc">Default YouTube behavior (dubbed audio).</span>
     </span>
   </label>
 
-  <div class="note">Изменение перезагрузит активную вкладку YouTube. Дорожку можно также переключать кнопкой <b>ORIG/DUB</b> в плеере.</div>
+  <div class="note">Changing this reloads the active YouTube tab. You can also toggle with the <b>ORIG/DUB</b> button in the player.</div>
 
   <script src="popup.js"></script>
 </body>

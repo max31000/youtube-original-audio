@@ -1,21 +1,21 @@
 # Changelog
 
-Формат основан на [Keep a Changelog](https://keepachangelog.com/ru/1.1.0/),
-проект придерживается [Semantic Versioning](https://semver.org/lang/ru/).
+Format based on [Keep a Changelog](https://keepachangelog.com/en/1.1.0/),
+this project adheres to [Semantic Versioning](https://semver.org/).
 
 ## [1.0.0] - 2026-06-14
 
-### Добавлено
+### Added
 
-- Перехват ответа `/youtubei/v1/player` (XHR, fetch, `ytInitialPlayerResponse`)
-  и удаление дублированных аудио-дорожек, чтобы плеер всегда выбирал
-  оригинальную.
-- Авто-переинициализация плеера (`loadVideoById`) на жёсткой загрузке, если
-  он успел стартовать с дублированной дорожкой.
-- Кнопка **ORIG / DUB** в панели плеера с подтверждением при выключении фикса.
-- Попап с переключателем режима «Оригинал» / «Не вмешиваться», синхронный с
-  кнопкой в плеере.
-- Режим отладки (`DEBUG` в `inject.js`) с диагностическим объектом
-  `window.__undubDbg`.
+- Intercept the `/youtubei/v1/player` response (XHR, fetch,
+  `ytInitialPlayerResponse`) and strip dubbed audio tracks so the player
+  always picks the original.
+- Auto-reinitialize the player (`loadVideoById`) on hard load if it started
+  on a dubbed track.
+- **ORIG / DUB** button in the player controls, with a confirmation prompt
+  when disabling the fix.
+- Popup with an "Original" / "Don't intervene" mode switch, in sync with the
+  player button.
+- Debug mode (`DEBUG` in `inject.js`) exposing `window.__undubDbg`.
 
 [1.0.0]: https://github.com/max31000/youtube-original-audio/releases/tag/v1.0.0

@@ -6,99 +6,83 @@
 [![Edge](https://img.shields.io/badge/Edge-111%2B-yellow.svg)](https://www.microsoft.com/edge)
 [![Release](https://img.shields.io/github/v/release/max31000/youtube-original-audio)](https://github.com/max31000/youtube-original-audio/releases/latest)
 
-Расширение для Chrome/Edge (Manifest V3), которое возвращает **оригинальную
-звуковую дорожку** на YouTube-видео с навязанным авто-дубляжом.
+A Chrome/Edge extension (Manifest V3) that restores the **original audio
+track** on YouTube videos with forced auto-dubbing.
 
-## Какую проблему решает
+## The problem
 
-YouTube раскатил автоматический ИИ-дубляж и для многих видео сам подставляет
-дублированную аудио-дорожку под язык интерфейса аккаунта, даже если в
-настройках выбран оригинал. Встроенное переключение «Звуковая дорожка →
-Оригинал» в меню плеера на таких видео **не работает**: пункт меню можно
-выбрать, но звук не меняется, а при следующей загрузке снова включается
-дубляж. Это расширение чинит переключение и по умолчанию открывает такие
-видео на оригинальной дорожке.
+YouTube rolled out automatic AI dubbing and, for many videos, plays a dubbed
+audio track matching your interface language by default — even if you've
+selected the original in settings. The player's own "Audio track → Original"
+menu **doesn't work** on these videos: you can pick it, but the audio doesn't
+change, and the dub comes back on the next reload. This extension fixes the
+switch and makes such videos open with the original audio by default.
 
-## Установка
+## Installation
 
-### Вариант 1 — готовый .zip (для обычных пользователей)
+### Option 1 — prebuilt .zip
 
-1. Скачай `.zip` со страницы [последнего релиза](https://github.com/max31000/youtube-original-audio/releases/latest)
-   и распакуй в любую папку.
-2. **Chrome:** открой `chrome://extensions`, включи **Режим разработчика**
-   (переключатель справа сверху), нажми **«Загрузить распакованное расширение»**
-   (Load unpacked) и выбери распакованную папку.
-3. **Edge:** открой `edge://extensions`, включи **Режим разработчика**, нажми
-   **«Загрузить распакованное»** и выбери ту же папку.
-4. Открой видео с авто-дубляжом — заиграет оригинал.
+1. Download the `.zip` from the [latest release](https://github.com/max31000/youtube-original-audio/releases/latest)
+   and unzip it.
+2. **Chrome:** open `chrome://extensions`, enable **Developer mode** (toggle
+   in the top right), click **Load unpacked**, and select the unzipped folder.
+3. **Edge:** open `edge://extensions`, enable **Developer mode**, click
+   **Load unpacked**, and select the same folder.
+4. Open an auto-dubbed video — it'll play the original audio.
 
-### Вариант 2 — из исходников (для разработчиков)
+### Option 2 — from source
 
 ```bash
 git clone https://github.com/max31000/youtube-original-audio.git
 ```
 
-Дальше так же: `chrome://extensions` (или `edge://extensions`) → Режим
-разработчика → Load unpacked → выбрать папку репозитория.
+Then the same as above: `chrome://extensions` (or `edge://extensions`) →
+Developer mode → Load unpacked → select the repository folder.
 
-## Использование
+## Usage
 
-- **По умолчанию** видео с авто-дубляжом открываются на оригинальной дорожке —
-  ничего настраивать не нужно.
-- Кнопка **ORIG / DUB** в правом углу панели плеера показывает текущий режим и
-  переключает его:
-  - **ORIG** (синяя) — фикс включён, играет оригинал.
-  - **DUB** (серая) — фикс выключен, поведение как у обычного YouTube.
-  - Переключение в **DUB** требует подтверждения и перезагружает страницу
-    (родное переключение дорожек в этих видео сломано, поэтому это единственный
-    надёжный способ).
-- Иконка расширения открывает попап с тем же выбором («Оригинал» /
-  «Не вмешиваться») — состояние кнопки и попапа всегда синхронизированы.
+- **By default**, auto-dubbed videos open with their original audio track —
+  nothing to configure.
+- The **ORIG / DUB** button in the player controls shows and toggles the
+  current mode:
+  - **ORIG** (blue) — fix enabled, original audio plays.
+  - **DUB** (gray) — fix disabled, default YouTube behavior.
+  - Switching to **DUB** asks for confirmation and reloads the page (the
+    native track switch is broken on these videos, so this is the only
+    reliable way to re-pick).
+- The extension icon opens a popup with the same choice ("Original" /
+  "Don't intervene"), always in sync with the player button.
 
-## Как это работает
+## How it works
 
-Коротко: расширение перехватывает ответ `/youtubei/v1/player` (XHR, fetch и
-встроенный `ytInitialPlayerResponse`) и вырезает из него все дублированные
-аудио-дорожки, оставляя плееру только оригинальную — потому что плеер выбирает
-дорожку по языку интерфейса и игнорирует серверные флаги «по умолчанию».
-Подробный разбор причины и механизма — в [`docs/HOW_IT_WORKS.md`](docs/HOW_IT_WORKS.md).
+In short: the extension intercepts the `/youtubei/v1/player` response (XHR,
+fetch, and the embedded `ytInitialPlayerResponse`) and strips out every
+dubbed audio track, leaving the player only the original — because the player
+picks a track by interface language and ignores the server's "default" flags.
+See [`docs/HOW_IT_WORKS.md`](docs/HOW_IT_WORKS.md) for the full breakdown.
 
-## Ограничения
+## Limitations
 
-- При первой (жёсткой) загрузке дублированного видео возможна короткая
-  пере-инициализация плеера (~1–2 c) — это рабочая часть фикса, не баг.
-- Работает только на `*.youtube.com`.
-- YouTube периодически меняет формат ответа `/player` — если фикс перестанет
-  работать, см. раздел «Разработка» ниже и [`docs/HOW_IT_WORKS.md`](docs/HOW_IT_WORKS.md).
-- Требуется Chromium 111+ (используется content script с `"world": "MAIN"`).
+- On the first (hard) load of a dubbed video, the player may briefly
+  re-initialize (~1-2s) — that's part of the fix, not a bug.
+- Only works on `*.youtube.com`.
+- YouTube occasionally changes the `/player` response format — if the fix
+  stops working, see [`docs/HOW_IT_WORKS.md`](docs/HOW_IT_WORKS.md).
+- Requires Chromium 111+ (uses a content script with `"world": "MAIN"`).
 
-## Приватность
+## Privacy
 
-Расширение **не собирает и не отправляет никаких данных**. Вся обработка
-происходит локально в браузере. Используемые права: `storage` (хранение
-выбранного режима) и доступ к `*.youtube.com` (для перехвата ответа плеера).
+The extension **collects and sends no data**. All processing happens locally
+in the browser. Permissions used: `storage` (to remember the selected mode)
+and access to `*.youtube.com` (to intercept the player response).
 
-## Разработка
+## Debugging
 
-Структура файлов:
+`inject.js` has a `var DEBUG = false;` flag near the top. Set it to `true` to
+expose `window.__undubDbg`, an object with counters for each hook/branch
+(`calls`, `mode`, `afFrom`/`afTo`, `tracksFrom`/`tracksTo`, `reinit`, ...) —
+useful if YouTube changes its response format and the fix needs updating.
 
-| Файл | Назначение |
-|------|-----------|
-| `manifest.json` | Манифест MV3 |
-| `inject.js` | MAIN-world, `document_start`: перехват и правка ответа `/player`, кнопка ORIG/DUB |
-| `content.js` | ISOLATED-world: мост к `chrome.storage`, сохранение режима, перезагрузка |
-| `popup.html` / `popup.js` | Попап с переключателем режима |
-| `icons/` | Иконки расширения (placeholder, см. ниже) |
-| `scripts/build.mjs` | Сборка `dist/*.zip` для релиза |
-
-Отладка: в начале `inject.js` есть флаг `var DEBUG = false;`. При `DEBUG = true`
-появляется объект `window.__undubDbg` со счётчиками по каждому хуку/ветке
-(`calls`, `mode`, `afFrom/afTo`, `tracksFrom/tracksTo`, `reinit`, ...) — удобно
-смотреть в консоли при отладке изменений в формате ответа YouTube.
-
-Иконки в `icons/` — временный placeholder (сгенерированы `scripts/gen-icons.mjs`),
-заменить на финальную графику при желании.
-
-## Лицензия
+## License
 
 [GPL-3.0-or-later](LICENSE)

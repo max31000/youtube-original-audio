@@ -1,105 +1,101 @@
-# Как это работает
+# How it works
 
-## Первопричина
+## Root cause
 
-YouTube раскатил автоматический ИИ-дубляж: для многих видео сервер добавляет
-в ответ `/youtubei/v1/player` дополнительные аудио-дорожки (дубляж на язык
-интерфейса пользователя).
+YouTube rolled out automatic AI dubbing: for many videos the server adds
+extra audio tracks to the `/youtubei/v1/player` response (a dub matching the
+user's interface language).
 
-Можно было бы ожидать, что выбор дорожки регулируется полями ответа:
+You'd expect track selection to be controlled by these response fields:
 
 - `streamingData.adaptiveFormats[].audioTrack.audioIsDefault`
 - `captions.playerCaptionsTracklistRenderer.defaultAudioTrackIndex`
 
-**Это не так.** Плеер выбирает активную аудио-дорожку **на клиенте**, сопоставляя
-язык дорожки с языком интерфейса аккаунта (`hl=ru` → берётся русская дорожка),
-и **игнорирует** оба этих поля. Проверено вживую через `movie_player`: даже
-когда оба флага указывают на оригинальную дорожку (`en.4`), плеер всё равно
-проигрывал русский дубляж (`ru.3`).
+**It isn't.** The player picks the active audio track **client-side**, by
+matching the track's language to the account's interface language (`hl=ru` →
+the Russian track is picked), and **ignores both of these fields**. Verified
+live via `movie_player`: even with both flags pointing at the original track
+(`en.4`), the player still played the Russian dub (`ru.3`).
 
-Встроенное переключение через меню плеера (`movie_player.setAudioTrack(...)`)
-тоже не работает на таких видео: вызов возвращает `true`, но активная дорожка
-не меняется, а при следующей загрузке снова выбирается дубляж по языку
-интерфейса.
+The player's own track switch (`movie_player.setAudioTrack(...)`) is also
+broken on these videos: the call returns `true`, but the active track doesn't
+change, and the next reload picks the dub by interface language again.
 
-Дополнительно: поле `audioTrack.isAutoDubbed` бесполезно для определения
-оригинала — у всех дорожек (включая оригинал) оно равно `false`.
+Also: `audioTrack.isAutoDubbed` is useless for finding the original — it's
+`false` on every track, including the original.
 
-## Решение: strip, а не флаги
+## The fix: strip, not flags
 
-Поскольку плеер игнорирует флаги «по умолчанию» и сам выбирает дорожку из
-списка, единственный надёжный способ — **не оставить ему выбора**: вырезать
-из ответа `/player` все дорожки, кроме оригинальной, до того как плеер
-прочитает список.
+Since the player ignores the "default" flags and picks a track from the list
+itself, the only reliable approach is to **leave it no choice**: strip every
+track except the original from the `/player` response before the player
+reads the list.
 
-Оригинальная дорожка определяется языконезависимо — по содержимому поля
-`xtags` (base64/protobuf), которое для оригинала декодируется в строку с
-`acont=...original`, а для дублированных — `acont=...dubbed`.
+The original track is identified language-independently, via the `xtags`
+field (base64/protobuf), which decodes to a string containing
+`acont=...original` for the original and `acont=...dubbed` for dubbed tracks.
 
-`inject.js` в режиме `original`:
+In `original` mode, `inject.js`:
 
-1. В `streamingData.adaptiveFormats` оставляет видео-форматы (без `audioTrack`)
-   и только тот аудио-формат, чей `xtags` указывает на `acont=original`;
-   на оставшихся аудио-форматах выставляет `audioIsDefault = true` (для
-   полноты, хотя плеер это и не требует).
-2. В `captions.playerCaptionsTracklistRenderer.audioTracks` оставляет только
-   запись с тем же `audioTrackId` и ставит `defaultAudioTrackIndex = 0`.
+1. In `streamingData.adaptiveFormats`, keeps video formats (no `audioTrack`)
+   and only the audio format whose `xtags` indicates `acont=original`; sets
+   `audioIsDefault = true` on the remaining audio formats (for completeness,
+   even though the player doesn't require it).
+2. In `captions.playerCaptionsTracklistRenderer.audioTracks`, keeps only the
+   entry with the same `audioTrackId` and sets `defaultAudioTrackIndex = 0`.
 
-После этого плееру физически негде взять дублированную дорожку — он
-инициализируется с единственной, оригинальной.
+After this, the player has nothing else to pick from — it initializes with
+the original track only.
 
-## Два пути доставки ответа `/player` — два перехватчика
+## Two delivery paths for `/player`, two interceptors
 
-1. **SPA-навигация / `loadVideoById`.** YouTube запрашивает `/player` через
-   `XMLHttpRequest` с `responseType: "text"`. `inject.js` подменяет дескрипторы
-   `responseText`/`response` у экземпляра XHR так, чтобы при чтении тело
-   ответа было прогнано через `processResponse` (с кэшированием результата —
-   модификация выполняется один раз, лениво, при первом чтении после
-   `readyState === 4`). Этот путь успевает сработать вовремя, и SPA-переходы на
-   дублированные видео сразу открываются на оригинале.
+1. **SPA navigation / `loadVideoById`.** YouTube requests `/player` via
+   `XMLHttpRequest` with `responseType: "text"`. `inject.js` shadows the
+   `responseText`/`response` descriptors on the XHR instance so the body is
+   run through `processResponse` when read (cached — the rewrite happens once,
+   lazily, on first read after `readyState === 4`). This path is in time, so
+   SPA navigations to dubbed videos open with the original audio right away.
 
-   Дополнительно есть перехват `window.fetch` (страховка для клиентов, которые
-   используют `fetch` вместо XHR) и веточка для `responseType: "json"` (на
-   YouTube не используется, но дешёвая и идемпотентная, поэтому оставлена как
-   подстраховка).
+   There's also a `window.fetch` interceptor (a safety net for clients that
+   use `fetch` instead of XHR) and a branch for `responseType: "json"` (not
+   used by YouTube, but cheap and idempotent, so kept as insurance).
 
-2. **Жёсткая загрузка страницы.** Здесь плеер берёт список дорожек из инлайн-
-   скрипта `var ytInitialPlayerResponse = {...}`, который выполняется **до**
-   запуска нашего `document_start`-скрипта в `world: "MAIN"`. Strip успевает
-   применить мутацию к объекту (он создаётся по той же ссылке, которую плеер
-   прочитает позже из `base.js`), но сам плеер на первой инициализации мог уже
-   успеть выбрать дублированную дорожку из исходных данных раньше, чем мы их
-   изменили.
+2. **Hard page load.** Here the player reads the track list from the inline
+   `var ytInitialPlayerResponse = {...}` script, which runs **before** our
+   `document_start` script in `world: "MAIN"`. The strip does mutate the
+   object in place (it's created under the same reference the player reads
+   later from `base.js`), but the player may already have picked the dubbed
+   track from the original data before our mutation landed.
 
-   Решение — watcher на `setInterval(..., 500)`: он проверяет, что плеер сейчас
-   на дублированной дорожке, а в (уже исправленном) `getPlayerResponse()` есть
-   оригинальная, и один раз вызывает `movie_player.loadVideoById({videoId,
-   startSeconds})`. Это форсирует свежий XHR-запрос `/player`, который наш
-   перехватчик успевает обработать вовремя — и плеер пересобирает список дорожек
-   уже из «очищенного» ответа. Защита от повторных вызовов — `reinitDone` по
-   `videoId`.
+   The fix is a `setInterval(..., 500)` watcher: it checks whether the player
+   is currently on a dubbed track while the (already-fixed)
+   `getPlayerResponse()` has an original available, and calls
+   `movie_player.loadVideoById({videoId, startSeconds})` once. This forces a
+   fresh `/player` XHR, which our interceptor processes in time — and the
+   player rebuilds its track list from the stripped response. `reinitDone`
+   (keyed by `videoId`) prevents repeat calls.
 
-## Режим «off»
+## "off" mode
 
-`processResponse` сразу возвращает `false`, если `data-undub-mode === "off"` —
-расширение не трогает ответ `/player` вообще, поведение полностью как у
-обычного YouTube. Режим хранится в `chrome.storage.local` и синхронизируется
-между попапом, кнопкой ORIG/DUB в плеере и атрибутом `data-undub-mode` на
-`<html>` (через который MAIN-world скрипт читает текущий режим без доступа к
-`chrome.storage`).
+`processResponse` returns `false` immediately if `data-undub-mode === "off"`
+— the extension doesn't touch the `/player` response at all, and behavior is
+identical to stock YouTube. The mode is stored in `chrome.storage.local` and
+kept in sync between the popup, the ORIG/DUB player button, and the
+`data-undub-mode` attribute on `<html>` (which is how the MAIN-world script
+reads the current mode without access to `chrome.storage`).
 
-## Если YouTube изменит формат ответа
+## If YouTube changes the response format
 
-Если фикс перестанет работать, проверь в DevTools (Network → ответ
-`/youtubei/v1/player`), что на месте:
+If the fix stops working, check in DevTools (Network → the
+`/youtubei/v1/player` response) that these are still present:
 
-- `streamingData.adaptiveFormats[].audioTrack.id` и `.audioTrack.audioIsDefault`;
-- `streamingData.adaptiveFormats[].xtags` — должен по-прежнему декодироваться
-  (base64url) в строку, содержащую `acont...original` / `acont...dubbed`;
-- `captions.playerCaptionsTracklistRenderer.audioTracks` и
+- `streamingData.adaptiveFormats[].audioTrack.id` and `.audioTrack.audioIsDefault`;
+- `streamingData.adaptiveFormats[].xtags` — should still decode (base64url) to
+  a string containing `acont...original` / `acont...dubbed`;
+- `captions.playerCaptionsTracklistRenderer.audioTracks` and
   `.defaultAudioTrackIndex`.
 
-Включи `DEBUG = true` в `inject.js` — появится `window.__undubDbg` со
-счётчиками по каждой ветке (`noAf`, `noAudio`, `noOriginal`, `afFrom/afTo`,
-`tracksFrom/tracksTo`, `reinit` и т.д.), которые помогут понять, на каком шаге
-перестало совпадать.
+Set `DEBUG = true` in `inject.js` to get `window.__undubDbg`, with counters
+for each branch (`noAf`, `noAudio`, `noOriginal`, `afFrom`/`afTo`,
+`tracksFrom`/`tracksTo`, `reinit`, etc.) to help pinpoint where things stopped
+matching.
