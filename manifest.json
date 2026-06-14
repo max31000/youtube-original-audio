@@ -1,7 +1,7 @@
 {
   "manifest_version": 3,
   "name": "YouTube Original Audio (Un-Dub)",
-  "version": "1.0.0",
+  "version": "1.0.1",
   "description": "Fixes YouTube's auto-dub bug by restoring the original audio track on dubbed videos.",
   "homepage_url": "https://github.com/max31000/youtube-original-audio",
   "icons": {
