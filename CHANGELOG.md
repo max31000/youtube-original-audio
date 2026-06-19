@@ -3,6 +3,18 @@
 Format based on [Keep a Changelog](https://keepachangelog.com/en/1.1.0/),
 this project adheres to [Semantic Versioning](https://semver.org/).
 
+## [1.0.2] - 2026-06-19
+
+### Fixed
+
+- Restore the auto-reinitialize fallback that was silently dead on current
+  YouTube player builds. It read the current audio track id via a hardcoded
+  obfuscated property (`getAudioTrack().TI.id`); YouTube renamed that key, so
+  the access threw and the fallback never ran, leaving hard-loaded pages stuck
+  on the dubbed track. The current track id is now resolved by matching against
+  the known track ids from the player response, independent of the property
+  name.
+
 ## [1.0.1] - 2026-06-14
 
 ### Changed
@@ -24,5 +36,6 @@ this project adheres to [Semantic Versioning](https://semver.org/).
   player button.
 - Debug mode (`DEBUG` in `inject.js`) exposing `window.__undubDbg`.
 
+[1.0.2]: https://github.com/max31000/youtube-original-audio/releases/tag/v1.0.2
 [1.0.1]: https://github.com/max31000/youtube-original-audio/releases/tag/v1.0.1
 [1.0.0]: https://github.com/max31000/youtube-original-audio/releases/tag/v1.0.0

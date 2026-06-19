@@ -254,6 +254,34 @@
     } catch (e) { return null; }
   }
 
+  // Id of the audio track the player is CURRENTLY using (e.g. "ru.3").
+  //
+  // The player exposes it under an obfuscated key on the getAudioTrack() object
+  // (it was ".TI", now ".Qn", and YouTube renames it across player builds). We
+  // must NOT hardcode that key: the old `getAudioTrack().TI.id` access started
+  // throwing once the key was renamed, which silently killed the reinit fallback
+  // below and left hard-loaded pages stuck on the dubbed track (the whole bug).
+  //
+  // Instead we find the nested object whose `id` is one of the known audio-track
+  // ids from the player response. That's name-independent and survives the churn.
+  function currentAudioTrackId(p, pr) {
+    var at;
+    try { at = p.getAudioTrack(); } catch (e) { return null; }
+    if (!at || typeof at !== 'object') return null;
+    var known = {};
+    try {
+      pr.streamingData.adaptiveFormats.forEach(function (f) {
+        if (f && f.audioTrack && f.audioTrack.id) known[f.audioTrack.id] = true;
+      });
+    } catch (e) {}
+    for (var k in at) {
+      var v = at[k];
+      if (v && typeof v === 'object' && typeof v.id === 'string' && known[v.id]) return v.id;
+    }
+    if (typeof at.id === 'string' && known[at.id]) return at.id; // last resort
+    return null;
+  }
+
   var reinitDone = {}; // videoId -> handled (prevents loops)
   function maybeReinit() {
     if (getMode() === 'off') return;
@@ -266,9 +294,10 @@
     var pr, cur, tracks;
     try {
       pr = p.getPlayerResponse();
-      cur = p.getAudioTrack().TI.id;
       tracks = p.getAvailableAudioTracks();
     } catch (e) { return; } // player not ready yet — try again next tick
+    cur = currentAudioTrackId(p, pr);
+    if (cur == null) return; // current track not resolvable yet — retry next tick
 
     if (!tracks || tracks.length <= 1) { reinitDone[vid] = true; return; } // nothing to switch
     var oid = findOriginalId(pr);
